@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+// import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract DepositWithdraw is ReentrancyGuard {
+contract DepositWithdraw  {
     IERC20 public usdt;
     IERC20 public usdc;
 
@@ -27,7 +27,7 @@ contract DepositWithdraw is ReentrancyGuard {
         usdc = IERC20(_usdc);
     }
 
-    function depositETH() external payable nonReentrant {
+    function depositETH() external payable {
         require(msg.value > 0, "Deposit amount must be greater than 0");
         require(deposits[msg.sender].amount == 0, "Existing deposit found");
 
@@ -40,7 +40,7 @@ contract DepositWithdraw is ReentrancyGuard {
         emit Deposited(msg.sender, msg.value, true);
     }
 
-    function depositUSDT(uint256 amount) external nonReentrant {
+    function depositUSDT(uint256 amount) external {
         require(amount > 0, "Deposit amount must be greater than 0");
         require(deposits[msg.sender].amount == 0, "Existing deposit found");
 
@@ -55,7 +55,7 @@ contract DepositWithdraw is ReentrancyGuard {
         emit Deposited(msg.sender, amount, false);
     }
 
-    function withdraw() external nonReentrant {
+    function withdraw() external {
         Deposit memory deposit = deposits[msg.sender];
         require(deposit.amount > 0, "No deposit found");
 
