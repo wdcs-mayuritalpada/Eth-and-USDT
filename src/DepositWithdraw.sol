@@ -22,6 +22,8 @@ contract DepositWithdraw {
     // Prices for ETH and USDT (scaled by 1e6 for precision)
     uint256 public ethPrice = 2000 * 1e6;  // Initial ETH price: $2000
     uint256 public usdtPrice = 1 * 1e6;    // Initial USDT price: $1
+    uint256 public reward ;
+
 
     // Constructor to initialize the contract with USDT and USDC token addresses
     constructor(address _usdt, address _usdc) {
@@ -71,7 +73,7 @@ contract DepositWithdraw {
 
         require(deposit.amount > 0, "No deposit found");  // Ensure there is a deposit to withdraw
 
-        uint256 reward = calculateReward(deposit.amount, blocksPassed);  // Calculate the reward
+        reward = calculateReward(deposit.amount, blocksPassed);  // Calculate the reward
         uint256 totalAmount = deposit.amount;  // Initialize total amount to withdraw
 
         // Handle ETH withdrawal
@@ -84,8 +86,7 @@ contract DepositWithdraw {
             to.transfer(totalAmount);  // Transfer ETH to the user
             usdc.transfer(msg.sender, reward);  // Transfer USDC reward to the user
 
-            deposit.amount = 0;  // Reset the deposit amount
-            deposit.isETH = false;  // Reset the ETH flag
+            delete deposits[msg.sender];
         }
         // Handle USDT withdrawal
         else if (deposit.isETH == false && deposit.amount != 0) {
@@ -95,8 +96,7 @@ contract DepositWithdraw {
             usdt.transfer(msg.sender, totalAmount);  // Transfer USDT to the user
             usdc.transfer(msg.sender, reward);  // Transfer USDC reward to the user
 
-            deposit.amount = 0;  // Reset the deposit amount
-            deposit.isETH = false;  // Reset the ETH flag
+            delete deposits[msg.sender];
         } 
     }
 
