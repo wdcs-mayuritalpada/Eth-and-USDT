@@ -5,9 +5,11 @@ import {Test, console} from "forge-std/Test.sol";
 import {DepositWithdraw} from "../src/DepositWithdraw.sol";
 import {USDT} from "../src/USDT.sol";
 import {USDC} from "../src/USDC.sol";
+import "forge-std/StdCheats.sol";
 
 
-contract DepositWithdrawTest is Test {
+
+contract DepositWithdrawTest is Test, StdCheats {
 
     DepositWithdraw public depositWithdraw;
     USDT public usdt;
