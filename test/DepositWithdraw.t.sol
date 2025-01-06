@@ -5,11 +5,10 @@ import {Test, console} from "forge-std/Test.sol";
 import {DepositWithdraw} from "../src/DepositWithdraw.sol";
 import {USDT} from "../src/USDT.sol";
 import {USDC} from "../src/USDC.sol";
-import "forge-std/StdCheats.sol";
 
 
 
-contract DepositWithdrawTest is Test, StdCheats {
+contract DepositWithdrawTest is Test {
 
     DepositWithdraw public depositWithdraw;
     USDT public usdt;
@@ -18,6 +17,7 @@ contract DepositWithdrawTest is Test, StdCheats {
     // address public usdt = address(0xC7f2Cf4845C6db0e1a1e91ED41Bcd0FcC1b0E141);
     // address public usdc = address(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
     address public owner = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+    address public user2 = address(0x1234);
 
     function setUp() public {
         usdt = new USDT(owner);
@@ -207,7 +207,7 @@ contract DepositWithdrawTest is Test, StdCheats {
         // Mine at least 5 blocks to unlock the deposit
         vm.roll(block.number + 5);
 
-        vm.prank(0x1234);
+        vm.prank(user2);
         // Attempt to withdraw without making a deposit
         vm.expectRevert("No deposit found");
         depositWithdraw.withdraw();
