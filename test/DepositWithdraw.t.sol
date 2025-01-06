@@ -92,7 +92,7 @@ contract DepositWithdrawTest is Test {
 
     function test_depositUSDT_existing_deposit(address user, uint amount) public {
         // Make an initial USDT deposit
-         vm.assume(user != address(0) && amount > 0);
+        vm.assume(user != address(0) && amount > 0);
         vm.prank(owner);
         usdt.mint(owner, amount);
         uint256 value = usdt.balanceOf(owner);
@@ -161,7 +161,6 @@ contract DepositWithdrawTest is Test {
 
         // Call the withdraw function
         depositWithdraw.withdraw();
-
     }
 
     function test_withdraw_locked_deposit() public {
