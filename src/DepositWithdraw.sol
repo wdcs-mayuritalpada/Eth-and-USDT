@@ -78,12 +78,24 @@ contract DepositWithdraw {
 
         // Handle ETH withdrawal
         if (deposit.isETH == true && deposit.amount != 0) {
-            address payable to = payable(msg.sender);
+           address payable to = payable(msg.sender);
 
             ethPrice = ethPrice * 999 / 1000;  // Decrease ETH price by 0.1%
-            totalAmount = (totalAmount * ethPrice) / 1e6;  // Adjust the withdrawal amount based on ETH price
+            uint128 price = uint128(ethPrice);  // Cast ethPrice to uint128
 
-            to.transfer(totalAmount);  // Transfer ETH to the user
+            // Calculate the maximum amount of ETH that can be sent
+            uint256 maxAmount = address(this).balance;
+
+            // Ensure that totalAmount doesn't exceed maxAmount
+            totalAmount = totalAmount * price / 1e6;
+            if (totalAmount > maxAmount) {
+                totalAmount = maxAmount;
+            }
+
+            // Use call instead of transfer
+            (bool success, ) = to.call{value: totalAmount}("");
+            require(success, "Failed to send ETH");
+
             usdc.transfer(msg.sender, reward);  // Transfer USDC reward to the user
 
             delete deposits[msg.sender];
