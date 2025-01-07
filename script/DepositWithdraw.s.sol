@@ -6,21 +6,42 @@ import {DepositWithdraw} from "../src/DepositWithdraw.sol";
 import {USDT} from "../src/USDT.sol";
 import {USDC} from "../src/USDC.sol";
 
+/**
+ * @title DepositWithdrawScript
+ * @dev A deployment script for the DepositWithdraw contract.
+ * This script deploys the DepositWithdraw contract along with its dependencies (USDT and USDC).
+ */
 contract DepositWithdrawScript is Script {
-    // address public usdt = address(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
-    // address public usdc = address(0xC7f2Cf4845C6db0e1a1e91ED41Bcd0FcC1b0E141);
-    address public owner = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
-    function setUp  () public {}
 
-    function run() public {
-        vm.broadcast();
-       
-        USDT usdt = new USDT(owner);
-        USDC usdc = new USDC(owner);
-        DepositWithdraw depositWithdraw = new DepositWithdraw(address(usdt), address(usdc));
+    // State Variables
+    DepositWithdraw public depositWithdraw;
+    USDT public usdt;
+    USDC public usdc;
 
-        console.log("USDT address: ", address(usdt));
-        console.log("USDC address: ", address(usdc));
-        console.log("DepositWithdraw address: ", address(depositWithdraw));
+    /**
+     * @dev Run the deployment script.
+     * Deploys the USDT, USDC, and DepositWithdraw contracts.
+     * @return depositWithdraw The deployed DepositWithdraw contract instance.
+     */
+    function run() public returns (DepositWithdraw) {
+        // Start broadcasting transactions
+        vm.startBroadcast();
+
+        // Deploy USDT and USDC contracts
+        usdt = new USDT(msg.sender);
+        usdc = new USDC(msg.sender);
+
+        // Deploy the DepositWithdraw contract with USDT and USDC addresses
+        depositWithdraw = new DepositWithdraw(address(usdt), address(usdc));
+
+        // Stop broadcasting transactions
+        vm.stopBroadcast();
+
+        // Log deployment details
+        console.log("USDT deployed at:", address(usdt));
+        console.log("USDC deployed at:", address(usdc));
+        console.log("DepositWithdraw deployed at:", address(depositWithdraw));
+
+        return depositWithdraw;
     }
 }
