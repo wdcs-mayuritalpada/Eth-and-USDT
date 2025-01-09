@@ -4,37 +4,35 @@ pragma solidity ^0.8.13;
 // Import the ERC20 interface from OpenZeppelin
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @title DepositWithdraw Contract
-/// @notice A contract that allows users to deposit ETH or USDT and withdraw them after a lock period with rewards.
-contract DepositWithdraw {
-    // State variables for USDT and USDC token contracts
-    IERC20 public usdt;
-    IERC20 public usdc;
 
+/// @title DepositWithdraw Contract
+/// @notice A contract that allows users to deposit ETH or any ERC20 token and withdraw them after a lock period with rewards.
+contract DepositWithdraw {
+
+    IERC20 public usdc;
     /// @notice Struct to store deposit details
     /// @param amount The amount deposited
     /// @param blockNumber The block number when the deposit was made
     /// @param isETH Flag to indicate if the deposit is in ETH
+    /// @param tokenAddress Address of the ERC20 token (if not ETH)
     struct Deposit {
         uint256 amount;
         uint256 blockNumber;
         bool isETH;
+        address tokenAddress;
     }
 
     /// @notice Mapping to store deposits for each user
     mapping(address => Deposit) public deposits;
 
-    /// @notice Prices for ETH and USDT (scaled by 1e6 for precision)
+    /// @notice Prices for ETH and tokens (scaled by 1e6 for precision)
     uint256 public ethPrice = 2000 * 1e6;  // Initial ETH price: $2000
-    uint256 public usdtPrice = 1 * 1e6;    // Initial USDT price: $1
+    mapping(address => uint256) public tokenPrices;  // Mapping to store token prices
+
     uint256 public reward;
 
-    /// @notice Constructor to initialize the contract with USDT and USDC token addresses
-    /// @param _usdt Address of the USDT token contract
-    /// @param _usdc Address of the USDC token contract
-    constructor(address _usdt, address _usdc) {
-        usdt = IERC20(_usdt);  // Initialize USDT token contract
-        usdc = IERC20(_usdc);  // Initialize USDC token contract
+    constructor(address _usdc) {
+        usdc = IERC20(_usdc);
     }
 
     /// @notice Function to deposit ETH
@@ -49,27 +47,35 @@ contract DepositWithdraw {
         deposits[msg.sender] = Deposit({
             amount: msg.value,
             blockNumber: block.number,
-            isETH: true
+            isETH: true,
+            tokenAddress: address(0)  // ETH has no token address
         });
     }
 
-    /// @notice Function to deposit USDT
+    /// @notice Function to deposit any ERC20 token
     /// @dev Requires the deposit amount to be greater than 0 and no existing deposit for the user
-    /// @param amount The amount of USDT to deposit
-    function depositUSDT(uint256 amount) external {
+    /// @param tokenAddress Address of the ERC20 token to deposit
+    /// @param amount The amount of the token to deposit
+    function depositToken(address tokenAddress, uint256 amount) external {
         require(amount > 0, "Deposit amount must be greater than 0");
         require(deposits[msg.sender].amount == 0, "Existing deposit found");
 
-        usdtPrice = usdtPrice * 999 / 1000;  // Decrease USDT price by 0.1%
+        // Initialize token price if not already set
+        if (tokenPrices[tokenAddress] == 0) {
+            tokenPrices[tokenAddress] = 1 * 1e6;  // Default price: $1
+        }
 
-        // Transfer USDT from the user to the contract
-        usdt.transferFrom(msg.sender, address(this), amount);
+        tokenPrices[tokenAddress] = tokenPrices[tokenAddress] * 999 / 1000;  // Decrease token price by 0.1%
+
+        // Transfer tokens from the user to the contract
+        IERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);
 
         // Store the deposit details in the mapping
         deposits[msg.sender] = Deposit({
             amount: amount,
             blockNumber: block.number,
-            isETH: false
+            isETH: false,
+            tokenAddress: tokenAddress
         });
     }
 
@@ -87,7 +93,7 @@ contract DepositWithdraw {
         uint256 totalAmount = deposit.amount;  // Initialize total amount to withdraw
 
         // Handle ETH withdrawal
-        if (deposit.isETH == true && deposit.amount != 0) {
+        if (deposit.isETH) {
             address payable to = payable(msg.sender);
 
             ethPrice = ethPrice * 999 / 1000;  // Decrease ETH price by 0.1%
@@ -106,17 +112,18 @@ contract DepositWithdraw {
             (bool success, ) = to.call{value: totalAmount}("");
             require(success, "Failed to send ETH");
 
-            usdc.transfer(msg.sender, reward);  // Transfer USDC reward to the user
+            // Transfer USDC reward to the user
+            IERC20(usdc).transfer(msg.sender, reward);  
 
             delete deposits[msg.sender];
-        }
-        // Handle USDT withdrawal
-        else if (deposit.isETH == false && deposit.amount != 0) {
-            usdtPrice = usdtPrice * 1001 / 1000;  // Increase USDT price by 0.1%
-            totalAmount = (totalAmount * usdtPrice) / 1e6;  // Adjust the withdrawal amount based on USDT price
+        } 
+        // Handle ERC20 token withdrawal
+        else {
+            uint256 tokenPrice = tokenPrices[deposit.tokenAddress];  // Get the token price
+            totalAmount = (totalAmount * tokenPrice) / 1e6;  // Adjust the withdrawal amount based on token price
 
-            usdt.transfer(msg.sender, totalAmount);  // Transfer USDT to the user
-            usdc.transfer(msg.sender, reward);  // Transfer USDC reward to the user
+            IERC20(deposit.tokenAddress).transfer(msg.sender, totalAmount);  // Transfer the token to the user
+            IERC20(usdc).transfer(msg.sender, reward);  // Transfer USDC reward to the user
 
             delete deposits[msg.sender];
         } 
